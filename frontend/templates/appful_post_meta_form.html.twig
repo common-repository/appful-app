@@ -1,0 +1,15 @@
+<div style="display: flex; flex-direction: column;">
+    <h2 style="padding: 0; font-size: 1.2rem; margin-bottom: 8px;">Post coordinates</h2>
+    <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
+        <label for="appful_coordinate_name" style="margin-bottom: 2px;">Name</label>
+        <input id="appful_coordinate_name" name="appful_coordinate_name" type="text" value="{{ coordinates_name }}">
+    </div>
+    <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
+        <label for="appful_coordinate_lat" style="margin-bottom: 2px;">Latitude</label>
+        <input id="appful_coordinate_lat" name="appful_coordinate_lat" type="number" value="{{ coordinates_lat }}">
+    </div>
+    <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
+        <label for="appful_coordinate_long" style="margin-bottom: 2px;">Longitude</label>
+        <input id="appful_coordinate_long" name="appful_coordinate_long" type="number" value="{{ coordinates_long }}">
+    </div>
+</div>

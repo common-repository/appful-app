@@ -1,0 +1,108 @@
+<?php
+
+namespace AppfulPlugin\Menu;
+
+use AppfulPlugin\Helper\AssetLoader;
+use AppfulPlugin\Helper\Constants;
+use AppfulPlugin\Helper\TemplateLoader;
+use AppfulPlugin\UseCases\IsLoggedInUseCase;
+use AppfulPlugin\Wp\WPOptionsManager;
+
+class Menu {
+	private IsLoggedInUseCase $isLoggedInUseCase;
+
+	public function __construct( IsLoggedInUseCase $isLoggedInUseCase ) {
+		$this->isLoggedInUseCase = $isLoggedInUseCase;
+	}
+
+	public function register(): void {
+		add_action(
+			"admin_menu",
+			function () {
+				$this->register_menu();
+			},
+			10,
+			0
+		);
+	}
+
+	private function register_menu(): void {
+		add_menu_page(
+			"Appful",
+			"Appful",
+			"manage_options",
+			"appful_menu",
+			function () {
+				$this->load_menu_content();
+			},
+			"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwMCIgaGVpZ2h0PSIxMDAwIiB2aWV3Qm94PSIwIDAgMTAwMCAxMDAwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDBfMV8yKSI+CjxwYXRoIGQ9Ik03OTguNSAxODNMODA1LjUgMjM5TDc2MS41IDY3M0w4MTcuNSA2OTMuNUw4NzAuNSA3NDRMODMwIDgwNkM3NzIuMzMzIDgyNi44MzMgNjU1LjggODY4LjUgNjUxIDg2OC41SDM5Mi41QzMyMy42NjcgODUwLjE2NyAxODQuNiA4MTMgMTc5IDgxMUMxNzMuNCA4MDkgMTQ2LjY2NyA3NzcuNSAxMzQgNzYyTDE1NC41IDcxMEwyMTkgNjc5TDIzNiA2MTkuNUwyMTQgNDE2TDE5OCAyNDRWMTk1TDI2MC41IDE1MUMzMzEuMTY3IDE0Mi4xNjcgNDc0LjUgMTI0LjcgNDgyLjUgMTI1LjVDNDkyLjUgMTI2LjUgNzAwLjUgMTQ5IDcwOS41IDE1MUM3MTYuNyAxNTIuNiA3NzEuODMzIDE3MyA3OTguNSAxODNaIiBmaWxsPSJibGFjayIgZmlsbC1vcGFjaXR5PSIwLjUiIHN0cm9rZT0iYmxhY2siLz4KPHBhdGggZD0iTTExMCA3NjQuMzAxQzExMCA3NTguMjc0IDExMCA3NTIuNTQ4IDExMCA3NDYuNTIxQzExMC4zMDEgNzQ2LjIxOSAxMTAuNjAzIDc0Ni4yMTkgMTEwLjYwMyA3NDUuOTE4QzExMy45MTYgNzI2LjYzIDEyNC40NTkgNzExLjg2MyAxMzguNjE4IDY5OS41MDdDMTU4LjggNjgxLjQyNSAxODIuNTk4IDY2OS45NzMgMjA2Ljk5OCA2NjAuMDI3QzIxNS4xMzIgNjU2LjcxMiAyMTUuMTMyIDY1Ni43MTIgMjE0LjIyOCA2NDguMjc0QzIxMS44MTggNjI2Ljg3NyAyMDkuNzEgNjA1Ljc4MSAyMDcuMyA1ODQuMzg0QzIwMy4zODQgNTQ2LjQxMSAxOTkuNDY4IDUwOC40MzggMTk1LjI1IDQ3MC40NjZDMTkxLjMzNCA0MzIuMTkyIDE4Ny4xMTcgMzkzLjkxOCAxODIuODk5IDM1NS42NDRDMTc4LjY4MiAzMTcuMDY5IDE3NC40NjUgMjc4Ljc5NSAxNzAuODUgMjQwLjIxOUMxNjkuOTQ2IDIyOS45NzMgMTY4Ljc0MSAyMTkuMTIzIDE3MC4yNDcgMjA5LjE3OEMxNzIuNjU3IDE5MiAxODQuMTA0IDE3OS42NDQgMTk3LjM1OSAxNjkuMDk2QzIxNi45MzkgMTUzLjcyNiAyMzkuNTMyIDE0NC4wODIgMjYzLjAyOSAxMzYuNTQ4QzMyNi44OTEgMTE1Ljc1MyAzOTIuODYyIDEwOC4yMTkgNDU5LjQzNSAxMDUuMjA1QzQ2Ny4yNjggMTA0LjkwNCA0NzUuNDAxIDEwNC4zMDEgNDgzLjIzMyAxMDRDNDk0LjA3OCAxMDQgNTA0LjkyMiAxMDQgNTE1Ljc2NyAxMDRDNTE2Ljk3MiAxMDQuMzAxIDUxOC4xNzcgMTA0LjkwNCA1MTkuMDggMTA0LjkwNEM1NDQuNjg2IDEwNi40MTEgNTcwLjI5MSAxMDcuMzE1IDU5NS44OTYgMTA5LjQyNUM2MzcuNzY4IDExMy4wNDEgNjc4LjczNiAxMTkuOTczIDcxOS4xMDIgMTMxLjQyNUM3NDYuNTE1IDEzOS4yNiA3NzMuMDI0IDE0OC45MDQgNzk2LjgyMSAxNjUuNDc5QzgxMi40ODYgMTc2LjMyOSA4MjUuNzQgMTg5LjU4OSA4MjkuMDU0IDIwOS40NzlDODMwLjU2IDIxNy45MTggODI5LjY1NiAyMjcuMjYgODI4Ljc1MyAyMzZDODI2LjA0MSAyNjMuNzI2IDgyMy4wMjkgMjkxLjQ1MiA4MjAuMDE3IDMxOS4xNzhDODE1LjQ5OCAzNjAuNDY2IDgxMS4yODEgNDAyLjA1NSA4MDYuNzYyIDQ0My4zNDJDODAzLjE0NyA0NzcuNjk5IDc5OS41MzIgNTEyLjA1NSA3OTUuOTE4IDU0Ni40MTFDNzkyLjMwMyA1ODAuNzY3IDc4OC42ODggNjE1LjQyNSA3ODQuNzcyIDY0OS43ODFDNzg0LjE2OSA2NTUuNTA3IDc4NS42NzYgNjU3LjkxOCA3OTEuMDk4IDY2MC4wMjdDODE3LjMwNSA2NjkuOTczIDg0Mi42MDkgNjgyLjYzIDg2My4zOTUgNzAxLjkxOEM4OTcuNzM2IDczMy44NjMgODk3LjczNiA3NzYuOTU5IDg2My4zOTUgODA5LjIwNkM4NTAuMTQgODIxLjU2MiA4MzUuMzggODMwLjkwNCA4MTkuNDE0IDgzOS4wNDFDNzc4LjE0NSA4NTkuNTM0IDczMy44NjMgODcxLjI4OCA2ODguNjc3IDg3OS43MjZDNjE2LjM4IDg5My4yODggNTQzLjQ4MSA4OTcuNTA3IDQ2OS45NzkgODk1LjY5OUM0MTAuOTM2IDg5NC4xOTIgMzUyLjQ5NiA4ODguNDY2IDI5NC42NTkgODc2LjQxMUMyNTMuOTkyIDg2Ny45NzMgMjE0LjIyOCA4NTYuODIyIDE3Ni44NzUgODM3LjUzNEMxNjYuNjMzIDgzMi4xMSAxNTYuOTkzIDgyNi4wODIgMTQ3LjY1NSA4MTkuNDUyQzEyOS4yNzkgODA1LjI4OCAxMTUuMTIxIDc4Ny44MDggMTEwIDc2NC4zMDFaTTIxNy44NDMgMjgyLjQxMUMyMjEuMTU3IDMxNC4zNTYgMjI0LjQ3IDM0NS4zOTcgMjI3Ljc4NCAzNzYuNDM4QzIzMi4wMDEgNDE3LjcyNiAyMzYuNTIgNDU5LjAxNCAyNDEuMDM4IDUwMC4zMDFDMjQ0Ljk1NCA1MzcuOTczIDI0OC44NyA1NzUuOTQ1IDI1My4wODggNjEzLjYxNkMyNTcuNjA2IDY1NC45MDQgMjYxLjgyNCA2OTYuNDkzIDI2Ni4zNDIgNzM3Ljc4MUMyNjYuNjQzIDc0MS4wOTYgMjY3Ljg0OCA3NDIuOTA0IDI3MC44NjEgNzQ0LjQxMUMyODkuODM5IDc1My43NTMgMzEwLjAyMiA3NjAuMDgyIDMzMC41MDYgNzY0LjkwNEMzOTAuMTUxIDc3OS4wNjggNDUwLjcgNzgyLjk4NiA1MTEuNTUgNzgyLjM4NEM1NTMuNDIyIDc4MS43ODEgNTk0Ljk5MiA3NzguMTY0IDYzNi4yNjIgNzcwLjMyOUM2NjguMTkzIDc2NC4zMDEgNjk5LjUyMiA3NTUuODYzIDcyOS4zNDQgNzQzLjIwNkM3MzEuMTUyIDc0Mi4zMDEgNzMzLjU2MSA3MzkuODkgNzMzLjg2MyA3MzguMDgyQzczNy4xNzYgNzA4LjI0NyA3NDAuNDkgNjc4LjExIDc0My41MDIgNjQ4LjI3NEM3NDcuMTE3IDYxMy4zMTUgNzUwLjczMiA1NzguNjU4IDc1NC42NDggNTQzLjY5OUM3NTguNTY0IDUwNi4wMjcgNzYyLjc4MiA0NjguMDU1IDc2Ni42OTggNDMwLjM4NEM3NzAuMDExIDM5OC43NCA3NzMuMzI1IDM2Ny4zOTcgNzc2Ljk0IDMzNS43NTNDNzc4Ljc0NyAzMTguMjc0IDc4MC41NTQgMzAwLjc5NSA3ODIuMzYyIDI4My4wMTRDNzgxLjE1NyAyODMuMzE1IDc4MC41NTUgMjgzLjYxNiA3NzkuNjUxIDI4My45MThDNzU4LjU2NCAyOTUuMDY5IDczNi4yNzMgMzAyLjYwMyA3MTMuNjggMzA4LjkzMkM2NzYuOTI5IDMxOC44NzcgNjM5LjU3NSAzMjUuNTA3IDYwMS4zMTggMzI4LjgyMkM1NzUuNDEyIDMzMC45MzIgNTQ5LjUwNSAzMzMuMDQxIDUyMy41OTkgMzMzLjY0NEM0NzUuNzAyIDMzNC44NDkgNDI3LjgwNiAzMzMuMzQyIDM4MC4yMSAzMjYuNDExQzM1Mi4xOTUgMzIyLjQ5MyAzMjMuODc5IDMxNy4wNjkgMjk2LjE2NSAzMTEuMDQxQzI2OS4wNTMgMzA1LjMxNSAyNDIuODQ2IDI5NS45NzMgMjE3Ljg0MyAyODIuNDExWk01MDguNTM3IDE0NS44OUM0NTEuNjAzIDE0NS44OSA0MDMuNDA1IDE0OS4yMDYgMzU1LjUwOCAxNTcuMDQxQzMyMi4wNzEgMTYyLjQ2NiAyODkuMjM2IDE3MCAyNTcuOTA4IDE4Mi45NTlDMjQzLjc0OSAxODguNjg1IDIzMC4xOTQgMTk1LjMxNSAyMTkuMDQ4IDIwNS44NjNDMjA5LjEwNyAyMTUuMjA1IDIwOC41MDUgMjIyLjEzNyAyMTguNzQ3IDIzMC44NzdDMjI3LjQ4MyAyMzguNDExIDIzNy40MjMgMjQ0Ljc0IDI0Ny45NjcgMjQ5Ljg2M0MyODIuMDA3IDI2Ni40MzggMzE4Ljc1OCAyNzQuODc3IDM1NS44MSAyODAuMzAxQzM4Ny4xMzggMjg0LjgyMiA0MTguNzY4IDI4Ny41MzQgNDUwLjA5NyAyODkuOTQ1QzQ5Mi4yNyAyOTMuMjYgNTM0Ljc0NSAyOTIuMzU2IDU3Ni45MTggMjg4LjQzOEM2MDcuMDQyIDI4NS43MjYgNjM3LjE2NiAyODEuMjA2IDY2Ny4yODkgMjc2LjA4MkM2OTcuMTEyIDI3MC45NTkgNzI2LjYzMyAyNjIuNTIxIDc1NC4wNDYgMjQ5LjI2Qzc2NS40OTMgMjQzLjgzNiA3NzYuMzM3IDIzNy44MDggNzg0LjQ3MSAyMjcuODYzQzc5MC40OTUgMjIwLjYzIDc5MC43OTcgMjE1LjgwOCA3ODQuMTY5IDIwOS40NzlDNzc3Ljg0MyAyMDMuMTUxIDc3MC42MTQgMTk3LjQyNSA3NjIuNzgxIDE5Mi45MDRDNzM4Ljk4NCAxNzkuMDQxIDcxMi40NzUgMTcxLjUwNyA2ODUuOTY2IDE2NS4xNzhDNjI0LjgxNSAxNTEuMDE0IDU2Mi43NiAxNDYuMTkyIDUwOC41MzcgMTQ1Ljg5Wk03NzkuOTUyIDY5OS44MDhDNzc3Ljg0MyA3MTguNzk1IDc3NS43MzUgNzM3LjE3OCA3NzMuOTI3IDc1NS4yNkM3NzMuMDI0IDc2NS4yMDYgNzY4LjIwNCA3NzEuNTM0IDc1OS4xNjcgNzc1Ljc1M0M3MjQuNTI0IDc5Mi4zMjkgNjg4LjM3NiA4MDIuNTc1IDY1MS4wMjIgODEwLjExQzU5MS42NzkgODIyLjE2NCA1MzEuNzMyIDgyNS43ODEgNDcxLjE4NCA4MjMuOTczQzQyNi45MDIgODIyLjc2NyAzODIuOTIxIDgxOC44NDkgMzM5LjI0MiA4MTAuMTFDMzA2LjQwNyA4MDMuNDc5IDI3NC43NzcgNzk0LjEzNyAyNDQuOTU0IDc3OC43NjdDMjMyLjMwMiA3NzIuMTM3IDIyNC43NzEgNzYzLjM5NyAyMjUuMDczIDc0OC42M0MyMjUuMDczIDc0NS45MTggMjI0LjQ3IDc0My4yMDYgMjI0LjE2OSA3NDAuMTkyQzIyMi42NjMgNzI2LjkzMiAyMjEuMTU3IDcxMy42NzEgMjE5LjY1IDY5OS44MDhDMjEzLjkyNyA3MDIuMjE5IDIwOC44MDYgNzA0LjMyOSAyMDMuNjg1IDcwNi43NEMxODcuNDE4IDcxNC41NzUgMTcxLjc1NCA3MjMuMzE1IDE1OS43MDQgNzM3LjE3OEMxNDguODYgNzQ5LjgzNiAxNDguODYgNzU5Ljc4MSAxNTkuNDAzIDc3Mi43NEMxNjEuMjEgNzc1LjE1MSAxNjMuMzE5IDc3Ny4yNiAxNjUuNDI4IDc3OS4wNjlDMTc2LjU3MyA3ODkuMzE1IDE4OS4yMjUgNzk2LjU0OCAyMDIuNzgxIDgwMi44NzdDMjM4LjMyNyA4MTkuNzUzIDI3Ni4yODMgODI5LjY5OSAzMTQuODQxIDgzNi45MzJDMzg1LjMzMSA4NTAuNDkzIDQ1Ni40MjMgODU0LjcxMiA1MjguMTE4IDg1Mi45MDRDNTgwLjUzMyA4NTEuNjk5IDYzMi45NDggODQ2Ljg3NyA2ODQuNDYgODM2LjkzMkM3MjEuNTEyIDgyOS42OTkgNzU3Ljk2MiA4MjAuMzU2IDc5Mi4zMDMgODA0LjY4NUM4MDkuNzc1IDc5Ni44NDkgODI2LjM0MyA3ODcuODA4IDgzOS4yOTYgNzczLjA0MUM4NTAuMTQgNzYwLjM4NCA4NTAuNDQyIDc0OS44MzYgODM5LjU5NyA3MzcuMTc4QzgyMy45MzMgNzE5LjA5NiA4MDIuMjQ0IDcwOS43NTMgNzc5Ljk1MiA2OTkuODA4WiIgZmlsbD0iYmxhY2siLz4KPC9nPgo8ZGVmcz4KPGNsaXBQYXRoIGlkPSJjbGlwMF8xXzIiPgo8cmVjdCB3aWR0aD0iNzc5IiBoZWlnaHQ9Ijc5MiIgZmlsbD0id2hpdGUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDExMCAxMDQpIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg=="
+		);
+		add_action(
+			"admin_enqueue_scripts",
+			function () {
+				$this->load_menu_assets();
+			},
+			10,
+			0
+		);
+	}
+
+	private function load_menu_content(): void {
+		$this->handle_sent_data();
+		$page_data       = $this->get_page_data();
+		$template_loader = new TemplateLoader();
+		echo( $template_loader->load_template(
+			"appful_menu_page.html.twig",
+			[
+				"logo_bg" => AssetLoader::load_asset_url( "logo_bg.png" ),
+				"data"    => $page_data
+			]
+		) );
+	}
+
+	private function handle_sent_data(): void {
+		if ( isset( $_POST['appful_token'] ) ) {
+			WPOptionsManager::save_session_id( $_POST['appful_token'] );
+			WPOptionsManager::save_username( $_POST['appful_username'] );
+			do_action( "appful_login" );
+		} else if ( isset( $_POST['appful_logout'] ) ) {
+			do_action( "appful_logout" );
+			WPOptionsManager::delete_session_id();
+		}
+	}
+
+	private function get_page_data(): array {
+		return [
+			"logged_in"      => $this->isLoggedInUseCase->invoke(),
+			"session_id"     => WPOptionsManager::get_session_id(),
+			"appful_api_url" => Constants::$APPFUL_API_URL . Constants::$API_VERSION_1,
+			"username"       => esc_html( WPOptionsManager::get_username() ),
+			"last_error"     => WPOptionsManager::get_last_sync_error(),
+			"companions"     => [
+				[
+					"name"   => "WPML",
+					"active" => $this->has_plugin( "appful-wpml/appful-wpml.php" ),
+					"link"   => "https://appful.io"
+				],
+				[
+					"name"   => "Woocomerce",
+					"active" => $this->has_plugin( "appful-woocomerce/appful-woocomerce.php" ),
+					"link"   => "https://appful.io"
+				]
+			]
+		];
+	}
+
+	private function has_plugin( string $plugin_name ): bool {
+		return is_plugin_active( $plugin_name );
+	}
+
+	private function load_menu_assets(): void {
+		wp_register_style( "appful_menu_page", AssetLoader::load_style_url( "style.css" ) );
+		wp_enqueue_style( "appful_menu_page", );
+		wp_register_script( "appful_login", AssetLoader::load_script_url( "user.js" ) );
+		wp_enqueue_script( "appful_login" );
+		wp_register_script( "appful_axios", AssetLoader::load_script_url( "axios.min.js" ) );
+		wp_enqueue_script( "appful_axios" );
+	}
+}

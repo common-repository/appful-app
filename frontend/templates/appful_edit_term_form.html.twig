@@ -1,0 +1,12 @@
+<tr class="form-field">
+    <th scope="row">
+        <label for="appful_term_image">Image (Appful)</label>
+    </th>
+    <td>
+        <img style="width: 50%; border-radius: 10px;" id="appful_term_image_view" src="{{ image_url }}"/>
+        <a href="#" onclick="chooseImage(); return false;" id="appful_term_image_upload_button" class="button appful_term_image_upload">Upload image</a>
+        <a href="#" onclick="removeImage(); return false;" id="appful_term_image_remove_button" class="appful_term_image_remove">Remove image</a>
+        <input id="appful_term_image" type="hidden" name="appful_term_image" value="{{ image_id }}">
+        <p class="description">Image to be displayed inside the Appful app.</p>
+    </td>
+</tr>
